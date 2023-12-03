@@ -59,3 +59,124 @@ to update query parameters -
     {isLogin ? 'Create new user' : 'Login'}
 </Link>
 ```
+
+## Attaching Auth token to outgoing request.
+
+**getting token from backend**
+
+```
+  const resData = await response.json();
+  const token = resData.token;
+```
+
+**storing token to local storage**
+
+```
+  localStorage.setItem('token', token);
+  const expiration = new Date();
+  expiration.setHours(expiration.getHours() + 1);
+  localStorage.setItem('expiration', expiration.toISOString());
+```
+
+**Refreshing token**
+
+```
+  export function getAuthToken() {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      return null;
+    }
+
+    const tokenDuration = getTokenDuration();
+
+    if (tokenDuration < 0) {
+      return 'EXPIRED';
+    }
+
+    return token;
+  }
+```
+
+**sending token to backend**
+
+```
+  const token = getAuthToken();
+  const response = await fetch('http://localhost:8080/events/' + eventId, {
+    method: request.method,
+    headers: {
+      'Authorization': 'Bearer ' + token
+    }
+  });
+```
+
+## logout
+
+```
+{token && (
+  <li>
+    <Form action="/logout" method="post">
+      <button>Logout</button>
+    </Form>
+  </li>
+)}
+```
+
+```
+import { redirect } from 'react-router-dom';
+
+export function action() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('expiration');
+  return redirect('/');
+}
+```
+
+## Adding Route Protection
+
+To prevent unauthorized access to some routes we need to add route protection by adding authentication checking loader in them
+
+```
+{
+  path: 'edit',
+  element: <EditEventPage />,
+  action: manipulateEventAction,
+  loader: checkAuthLoader,
+},
+```
+
+```
+export function checkAuthLoader() {
+	const token = getAuthToken();
+
+	if (!token) {
+		return redirect("/auth");
+	}
+	return null;
+}
+```
+
+## Adding automatic logout
+
+in Root.js we include
+
+```
+useEffect(() => {
+	if (!token) {
+		return null;
+		// Returning "undefined" won't work as intended (the loader won't return that value to the component)
+	}
+
+	if (token === "EXPIRED") {
+		submit(null, { action: "/logout", method: "post" });
+		return;
+	}
+
+	const tokenDuration = getTokenDuration();
+	console.log(tokenDuration);
+
+	setTimeout(() => {
+		submit(null, { action: "/logout", method: "post" });
+	}, tokenDuration);
+}, [token, submit]);
+```
