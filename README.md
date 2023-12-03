@@ -9,6 +9,23 @@
 
 # NOTES
 
+## How does authentication work?
+
+there are two ways -
+
+1. Server side Sessions
+   Server side sessions are very popular solution for full stack application where we don't have a decoupled frontend and backend. as we do have in react so its not ideal for react.
+
+- Store unique identifier on server, send same identifier to client.
+- Client sends identifier along with requests to protected resources.
+- Server can then check if the identifier is valid ( = previously issued by server to client)
+
+2. Authentication Tokens
+
+- Create (but not stored) "permission" token on server & send it to the client
+- Client attaches token to future requests for protected resources
+- Server can then verify the attached token
+
 ## Query Parameters
 
 to get query parameters -
